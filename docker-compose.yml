@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: construction_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: mongopass123
+      MONGO_INITDB_DATABASE: construction_management
+    ports:
+      - "27017:27017"
+    networks:
+      - app_network
+    volumes:
+      - mongodb_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: construction_backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://admin:mongopass123@mongodb:27017/construction_management?authSource=admin
+      JWT_SECRET: secret-key-change-in-production
+      PORT: 5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - app_network
+
+  frontend:
+    build: ./frontend
+    container_name: construction_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+
+volumes:
+  mongodb_data:
+
+networks:
+  app_network:
+    driver: bridge
